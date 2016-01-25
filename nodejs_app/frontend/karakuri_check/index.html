@@ -9,12 +9,11 @@
 	<script type="text/javascript" src="libs/snap.svg.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="scripts.js"></script>
-
+    <link type="text/css" rel="stylesheet" href="styles.css" />
 	<style type="text/css">
 
 		canvas {
 			background : url(images/back.jpg);
-			float      : left;
 		}
 
 		#top {
@@ -52,11 +51,6 @@
 			width  : 764px;
 			margin : 0 auto;
 		}
-
-		valText{
-
-		}
-
 	</style>
 
 </head>
@@ -68,17 +62,21 @@
 	<div id="middle_wrapper">
 		<div id="top"></div>
  -->
-		<div class="valText" data-bind="text: nowVal0"></div>
-		<div class="valText" data-bind="text: nowVal1"></div>
-		<div class="valText" data-bind="text: minVal0"></div>
-		<div class="valText" data-bind="text: minVal1"></div>
-		<div class="valText" data-bind="text: maxVal0"></div>
-		<div class="valText" data-bind="text: maxVal1"></div>
+		<button data-bind="click: calibStart">キャリブレーション開始</button><br>
 
-		<div class="valText" data-bind="text: nowNormalzeVal0"></div>
-		<div class="valText" data-bind="text: nowNormalzeVal1"></div>
+		now0: <div class="valText" data-bind="text: nowVal0"></div><br>
+		now1: <div class="valText" data-bind="text: nowVal1"></div><br>
+		min0: <div class="valText" data-bind="text: minVal0"></div><br>
+		min1: <div class="valText" data-bind="text: minVal1"></div><br>
+		max0: <div class="valText" data-bind="text: maxVal0"></div><br>
+		max1: <div class="valText" data-bind="text: maxVal1"></div><br>
 
-		<div class="valText" data-bind="text: nowDeg"></div>
+		nomalizeVal0: <div class="valText" data-bind="text: nowNormalzeVal0"></div><br>
+		nomalizeVal1: <div class="valText" data-bind="text: nowNormalzeVal1"></div><br>
+
+		rotDeg: <div class="valText" data-bind="text: nowDeg"></div><br>
+		nowState: <div class="valText" data-bind="text: nowState"></div><br>
+
 
 		<canvas id="sketch" width="523" height="346"></canvas>
 		<div id="svgContent">

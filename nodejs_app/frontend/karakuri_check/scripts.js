@@ -86,11 +86,16 @@ $(function () {
 		nowNormalzeVal0:ko.observable(0),
 		nowNormalzeVal1:ko.observable(0),
 		nowDeg:ko.observable(0),
+		nowState:ko.observable("none"),
+		calibStart:function(){
+			myViewModel.nowState("carib");
+		},
 	};
 	ko.applyBindings(myViewModel);
 	var myVm = myViewModel;
 
-
+	var logData0 = [];
+	var logData1 = [];
 
 	var $sketch = $( "#sketch" );
 	var canvas  = $sketch[0]
@@ -107,8 +112,8 @@ $(function () {
 	var max_canvas_x = 523;
 	var max_canvas_y = 346;
 
-		$context.fillStyle = "#FFF";
-		$context.fillRect(0,0,max_canvas_x,max_canvas_y);
+	$context.fillStyle = "#FFF";
+	$context.fillRect(0,0,max_canvas_x,max_canvas_y);
 
 	socket.on( "message", function ( data ) {
 		var jsonData;
@@ -128,12 +133,15 @@ $(function () {
 		   y:jsonData.val1/1024 * max_canvas_y/2,	
 		};
 
-		myVm.nowVal0(jsonData.val0);
-		myVm.minVal0(Math.min(jsonData.val0,myVm.minVal0()));
-		myVm.maxVal0(Math.max(jsonData.val0,myVm.maxVal0()));
-		myVm.nowVal1(jsonData.val1);
-		myVm.minVal1(Math.min(jsonData.val1,myVm.minVal1()));
-		myVm.maxVal1(Math.max(jsonData.val1,myVm.maxVal1()));
+		var setData_ = function(rawVal, nowVal, minVal, maxVal, logTbl){
+			nowVal(rawVal);
+			minVal(Math.min(rawVal, minVal()));
+			maxVal(Math.max(rawVal, maxVal()));
+			logTbl.push(rawVal);
+		};
+		setData_(jsonData.val0, myVm.nowVal0, myVm.minVal0, myVm.maxVal0, logData0);
+		setData_(jsonData.val1, myVm.nowVal1, myVm.minVal1, myVm.maxVal1, logData1);
+
 		var len0 = myVm.maxVal0()-myVm.minVal0();
 		var len1 = myVm.maxVal1()-myVm.minVal1();
 		if(len0)myVm.nowNormalzeVal0((myVm.nowVal0()-myVm.minVal0())/len0);
@@ -141,8 +149,7 @@ $(function () {
 
 		var nv0 = myVm.nowNormalzeVal0();
 		var nv1 = myVm.nowNormalzeVal1();
-		if(nv1<0.5)nv0 = (1.0-nv0) + 1.0;
-		myVm.nowDeg(nv0*180); 
+		myVm.nowDeg(nv0*360); 
 
 		/* Initial position */
 		if ( $lastX == -1 ) {
@@ -156,8 +163,7 @@ $(function () {
 
 		$context.save()
 		$context.translate(4, 0);
-	//    $context.rotate(theta)
-
+  //    $context.rotate(theta)
 
 		$context.beginPath();
 		$context.moveTo( max_canvas_x-10, $lastY );
