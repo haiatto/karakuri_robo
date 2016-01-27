@@ -50,4 +50,5 @@ void loop() {
   sensorValue1 = analogRead(sensorPin1);    
   sprintf(json, "{\"val0\":%d, \"val1\":%d}", sensorValue0, sensorValue1);
   Serial.println(json);    
+  delay(30);
 }

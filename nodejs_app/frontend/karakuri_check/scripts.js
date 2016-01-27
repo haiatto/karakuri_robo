@@ -71,6 +71,216 @@ function drawCircle(cx,cy,rotRad)
   drawMoveLine({cycle:4,startR:30,endR:15,innerLen:4,samplingOneCycle:40});
 }
 
+
+function CaribData(){
+	var self = this;
+	var logData = [];
+	var maxVal = 0;
+	var minVal = 99999;
+
+	var ThresholdStartRange = 200;
+	var ThresholdStartData  = 100;
+	var ViewCount = 500;
+
+	//HACK: 多次元に拡張すると多分より精度アップ
+	self.addValue = function(val)
+	{
+		logData.push(val);
+		minVal = Math.min(minVal,val);
+		maxVal = Math.max(maxVal,val);
+	};
+	self.tryMatching = function()
+	{
+		if( maxVal-minVal < ThresholdStartRange )
+		{
+			return false;
+		}
+		if( logData.length < ThresholdStartData )
+		{
+			return false;
+		}	
+/*	
+		var peekData=[];
+		var len = logData.length;
+		for(var slideIdx=0; slideIdx < len / 2 ; ++slideIdx)
+		{
+			var matchVal = 0;
+			for(var idx=0; idx < len / 2 ; ++idx)
+			{
+				var diff = (logData[slideIdx] - logData[idx]);
+				matchVal += diff * diff;
+			}
+			peekData.push(matchVal);
+		}
+*/
+		return false;	
+	};
+	self.getCaribValue = function()
+	{
+		return value;
+	};
+
+	self.getLogInfo = function()
+	{
+		var info={};
+		info.offsIdx = 0;
+		info.len     = logData.length;
+		if(info.len > ViewCount) 
+		{
+			info.offsIdx = info.len - ViewCount;
+			info.len     = ViewCount;
+		}
+		return info;
+	};
+	self.calcMinMaxPeekInfo = function()
+	{
+		var logInfo = self.getLogInfo();
+
+		var minPeekInfos = [];
+		var maxPeekInfos = [];
+		var nowInfo      = null;
+		var thresholdMaxS  = ((maxVal-minVal)*0.85+minVal);
+		var thresholdMaxE  = ((maxVal-minVal)*0.70+minVal);
+		var thresholdMinS  = ((maxVal-minVal)*0.15+minVal);
+		var thresholdMinE  = ((maxVal-minVal)*0.30+minVal);
+		for(var idx=0; idx < logInfo.len; ++idx)
+		{
+			var filterValue=0;
+			var val = logData[logInfo.offsIdx+idx];
+			if( val > thresholdMaxE ){
+				if( val > thresholdMaxS ){
+					if(nowInfo && !nowInfo.isMax){
+						nowInfo.endIdx = idx;
+						nowInfo = null;
+					}
+					if(nowInfo==null){
+						nowInfo = {isMax:true,startIdx:idx,endIdx:idx+1,peekIdx:-1};
+						maxPeekInfos.push( nowInfo );
+					}
+				}
+			}
+			else 
+			if( val < thresholdMinE ){
+				if( val < thresholdMinS ){
+					if(nowInfo && nowInfo.isMax){
+						nowInfo.endIdx = idx;
+						nowInfo = null;
+					}
+					if(nowInfo==null){
+						nowInfo = {isMax:false,startIdx:idx,endIdx:idx+1,peekIdx:-1};
+						minPeekInfos.push( nowInfo );
+					}
+				}
+			}
+			else{
+				if(nowInfo){
+					nowInfo.endIdx = idx;
+					nowInfo = null;
+				}
+			}
+		}
+		$.each(minPeekInfos,function(k,minInfo){
+			var peekIdx    = minInfo.startIdx;
+			var nowMinVal  = logData[logInfo.offsIdx + minInfo.startIdx];
+			for(var idx=minInfo.startIdx; idx < minInfo.endIdx; ++idx){
+				var tmpMinVal = logData[logInfo.offsIdx + minInfo.startIdx];
+				if(tmpMinVal < nowMinVal)
+				{
+					peekIdx   = idx;
+					nowMinVal = tmpMinVal;
+				}
+			}
+			minInfo.peekIdx = peekIdx;
+		});
+		$.each(maxPeekInfos,function(k,maxInfo){
+			var peekIdx    = maxInfo.startIdx;
+			var nowMaxVal  = logData[logInfo.offsIdx + maxInfo.startIdx];
+			for(var idx=maxInfo.startIdx; idx < maxInfo.endIdx; ++idx){
+				var tmpMaxVal = logData[logInfo.offsIdx + maxInfo.startIdx];
+				if(tmpMaxVal > nowMaxVal)
+				{
+					peekIdx   = idx;
+					nowMaxVal = tmpMaxVal;
+				}
+			}
+			maxInfo.peekIdx = peekIdx;
+		});
+		return {minPeekInfos:minPeekInfos,
+		        maxPeekInfos:maxPeekInfos}
+	};
+
+	self.debugDraw = function(px,py,ctx)
+	{
+		if( maxVal-minVal < ThresholdStartRange )
+		{
+			return false;
+		}
+		if( logData.length < ThresholdStartData )
+		{
+			return false;
+		}
+		var logInfo = self.getLogInfo();
+/*
+		var peekData=[];
+		for(var slideIdx=0; slideIdx < logInfo.len / 2 ; ++slideIdx)
+		{
+			var matchVal = 0;
+			for(var idx=0; idx < len / 2 ; ++idx)
+			{
+				var diff = (logData[logInfo.offsIdx+slideIdx+idx] - logData[logInfo.offsIdx+idx]);
+				matchVal += Math.abs(diff);
+			}
+			peekData.push(matchVal);
+		}
+*/
+		var minMaxPeekInfo = self.calcMinMaxPeekInfo();
+		
+		var filterData=[];
+		for(var idx=0; idx < logInfo.len;idx++)
+		{
+			filterData.push(0);
+		}
+		$.each(minMaxPeekInfo.minPeekInfos,function(k,minInfo){
+			filterData[minInfo.peekIdx] = 100;
+		});
+		$.each(minMaxPeekInfo.maxPeekInfos,function(k,maxInfo){
+			filterData[maxInfo.peekIdx] = 200;
+		});
+
+		ctx.save()		
+		
+		ctx.beginPath();
+		ctx.moveTo( px, py + logData[logInfo.offsIdx]/1024.0 * 200 );
+		for(var idx=0; idx < logInfo.len ; ++idx)
+		{
+			ctx.lineTo( px + idx, py + 100 + logData[logInfo.offsIdx+idx]/1024.0 * 200 );
+		}
+		ctx.strokeStyle = "#F00";
+		ctx.stroke();
+
+/*
+		ctx.beginPath();
+		ctx.moveTo( px, py + peekData[0]/1024.0 * 200 );
+		for(var idx=0; idx < peekData.length ; ++idx)
+		{
+			ctx.lineTo( px + idx, py + 100 + peekData[idx]/2000.0 * 200 );
+		}
+		ctx.strokeStyle = "#F0F";
+		ctx.stroke();
+*/
+		ctx.beginPath();
+		ctx.moveTo( px, py + filterData[0]/1024.0 * 200 );
+		for(var idx=0; idx < filterData.length ; ++idx)
+		{
+			ctx.lineTo( px + idx, py + 100 + filterData[idx]/1024.0 * 200 );
+		}
+		ctx.strokeStyle = "#F0F";
+		ctx.stroke();
+
+		ctx.restore();
+	};
+};
+
 $(function () {
 
 	var s = Snap("#svg");
@@ -94,8 +304,7 @@ $(function () {
 	ko.applyBindings(myViewModel);
 	var myVm = myViewModel;
 
-	var logData0 = [];
-	var logData1 = [];
+	var caribData = new CaribData();
 
 	var $sketch = $( "#sketch" );
 	var canvas  = $sketch[0]
@@ -115,12 +324,12 @@ $(function () {
 	$context.fillStyle = "#FFF";
 	$context.fillRect(0,0,max_canvas_x,max_canvas_y);
 
-	socket.on( "message", function ( data ) {
+	var dataInputFunc = function ( data ) {
 		var jsonData;
 		try {
 			jsonData = JSON.parse(data);
-			console.log('val0: ' + jsonData.val0);
-			console.log('val1: ' + jsonData.val1);
+			//console.log('val0: ' + jsonData.val0);
+			//console.log('val1: ' + jsonData.val1);
 		} catch(e) {
 			console.log("error");
 			// データ受信がおかしい場合無視する
@@ -132,15 +341,22 @@ $(function () {
 		   x:jsonData.val0/1024 * max_canvas_x/2,	
 		   y:jsonData.val1/1024 * max_canvas_y/2,	
 		};
-
-		var setData_ = function(rawVal, nowVal, minVal, maxVal, logTbl){
+		var setData_ = function(rawVal, nowVal, minVal, maxVal){
 			nowVal(rawVal);
 			minVal(Math.min(rawVal, minVal()));
 			maxVal(Math.max(rawVal, maxVal()));
-			logTbl.push(rawVal);
 		};
-		setData_(jsonData.val0, myVm.nowVal0, myVm.minVal0, myVm.maxVal0, logData0);
-		setData_(jsonData.val1, myVm.nowVal1, myVm.minVal1, myVm.maxVal1, logData1);
+		setData_(jsonData.val0, myVm.nowVal0, myVm.minVal0, myVm.maxVal0);
+		setData_(jsonData.val1, myVm.nowVal1, myVm.minVal1, myVm.maxVal1);
+
+		caribData.addValue(jsonData.val0);
+		if("carib"==myVm.nowState())
+		{
+			if(caribData.tryMatching())
+			{
+				myVm.nowState("caribOk");
+			}
+		}
 
 		var len0 = myVm.maxVal0()-myVm.minVal0();
 		var len1 = myVm.maxVal1()-myVm.minVal1();
@@ -183,11 +399,18 @@ $(function () {
 
 		$context.restore();
 
+
+		var dbgCtx = $( "#debugCanvas" )[0].getContext( '2d' );
+		dbgCtx.fillStyle = "#CCF";
+		dbgCtx.fillRect(0,0,max_canvas_x,max_canvas_y);
+		caribData.debugDraw(0,0,dbgCtx);
+
 		gSnap.clear();
 		drawCircle(50,50,Math.PI * myVm.nowDeg()/180 );
 
 		$lastX = data.x;
 		$lastY = data.y;
-	} );
+	};
 
+	socket.on( "message", dataInputFunc );
 });
