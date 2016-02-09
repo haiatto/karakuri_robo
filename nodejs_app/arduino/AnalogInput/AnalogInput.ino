@@ -27,28 +27,84 @@
  
  */
 
-int sensorPin0 = A1;    // select the input pin for the potentiometer
+int sensorPin0 = A2;    // select the input pin for the potentiometer
 int sensorPin1 = A5;    // select the input pin for the potentiometer
 int sensorValue0 = 0;  // variable to store the value coming from the sensor
 int sensorValue1 = 0;  // variable to store the value coming from the sensor
 char json[64];
+int cnt0=0;
+int cnt1=0;
 
 void setup() {
   // declare the ledPin as an OUTPUT:
   //pinMode(ledPin, OUTPUT);
   Serial.begin(9600);
   analogReference(DEFAULT);
+
+  pinMode(12, OUTPUT); // 回転方向 (HIGH/LOW)
+  pinMode(9, OUTPUT); // ブレーキ (HIGH/LOW)
+  pinMode(3, OUTPUT); // PWMによるスピード制御 (0-255)
+
+  pinMode(13, OUTPUT); // 回転方向 (HIGH/LOW)
+  pinMode(11, OUTPUT); // ブレーキ (HIGH/LOW)
+  pinMode(8, OUTPUT); // PWMによるスピード制御 (0-255)
 }
 
 void loop() {
-  analogRead(sensorPin0);    
+  
+  while(Serial.available())
+  { 
+    char c = Serial.read();
+    if(c=='1')
+    {
+      c = Serial.read();
+      digitalWrite(12, HIGH);
+      digitalWrite(9, LOW);
+      if(c=='h'){
+        cnt0=100;
+        analogWrite(3, 255);
+      }
+      if(c=='l'){
+        analogWrite(3, 0);
+      }        
+    }
+    if(c=='2')
+    {
+      c = Serial.read();
+      digitalWrite(13, HIGH);
+      digitalWrite(11, LOW);
+      if(c=='h'){
+        cnt1=100;
+        analogWrite(8, 255);
+      }
+      if(c=='l'){
+        analogWrite(8, 0);
+      }        
+    }
+  }
+  if(cnt0>0){
+    cnt0--;
+    if(cnt0==0){
+      analogWrite(3,0);
+    }
+  }
+  if(cnt1>0){
+    cnt1--;
+    if(cnt1==0){
+      analogWrite(8,0);
+    }
+  }
+  
+//  analogRead(sensorPin0);    
   analogRead(sensorPin0);    
   sensorValue0 = analogRead(sensorPin0);    
 
-  analogRead(sensorPin1);    
+//  analogRead(sensorPin1);    
   analogRead(sensorPin1);    
   sensorValue1 = analogRead(sensorPin1);    
+  
   sprintf(json, "{\"val0\":%d, \"val1\":%d}", sensorValue0, sensorValue1);
-  Serial.println(json);    
+  Serial.println(json);   
+  
   delay(30);
 }

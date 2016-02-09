@@ -24,6 +24,8 @@ module.exports = {
 			console.log( data );
 			socket.emit( "message", data.toString() );
 		} );
+		
+		return {sp:sp};
 
 	}
 

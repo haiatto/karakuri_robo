@@ -37,8 +37,17 @@ io.set('log level', 1);
 
 io.sockets.on( "connection", function ( socket ) {
 	// On a new Socket.io connection, load the data provider we want. For now, just Arduino.
-	var $provider = require( './providers/arduino.js' ).init( socket );
+	var provider = require( './providers/arduino.js' ).init( socket );
+
+	socket.on( "solenoid", function ( data ) {
+		var msg = "" + String(data.tgt) + (data.value?"h":"l");
+	    console.log( msg );
+	    provider.sp.write(msg);
+	    provider.sp.flush();
+
+	} );
 } );
+
 
 
 /*
