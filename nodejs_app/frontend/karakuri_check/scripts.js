@@ -506,13 +506,26 @@ function CamHeadContol(){
 		else{
 			deltaDeg = nowDeg - lastDeg;	
 		}
-		lastDeg = nowDeg;
-		
+		lastDeg = nowDeg;		
 
 		// リクエストがある時はその処理をします(角度に紐づく処理です)
 		if(bNowReq)
 		{
+			var restDelta = deltaDeg;
 			//nowDeg =
+			if(reqRestDelayDeg!=0){
+				reqRestDelayDeg -= restDelta;
+				if(reqRestDelayDeg<0){
+					restDelta = -reqRestDelayDeg;
+					reqRestDelayDeg = 0;
+				}
+			}
+			if(reqRestDelayDeg==0){
+		        reqRestOnDeg -= restDelta;
+		        if(reqRestOnDeg<=0){
+		        	bNowReq = false;
+		        }
+			}
 		}
 
 		// 内外検出(エッジにより検出します)
@@ -529,13 +542,13 @@ function CamHeadContol(){
 				lastInner = false;
 			}
 		}
-		// 内外切り替え時の処理をします(取り付け位置によって決まっている一定角度後に溝が来る状態です)
+		// 内外切り替え時の処理をします(取り付け位置と現在の位置によって決まっている一定角度後に溝が来る状態です)
 		if(lastInner!=oldInner)
 		{
 			//test
 			bNowReq         = true;
-		    reqRestDelayDeg = 0;
-	        reqRestOnDeg    = 0;
+		    reqRestDelayDeg = 10;
+	        reqRestOnDeg    = 10;
 		}
 	};
 	self.setHeadPos = function(headPosValue)
