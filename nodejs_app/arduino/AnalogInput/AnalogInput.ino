@@ -106,5 +106,5 @@ void loop() {
   sprintf(json, "{\"val0\":%d, \"val1\":%d}", sensorValue0, sensorValue1);
   Serial.println(json);   
   
-  delay(30);
+  delay(10);
 }

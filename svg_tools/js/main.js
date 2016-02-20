@@ -1,5 +1,15 @@
 var gSnap;
 $(function(){
+      var myViewModel={
+          circleRadius:ko.observable(40),
+          cycle:ko.observable(3),
+          samplingOneCycle:ko.observable(40),
+          innerLen:ko.observable(4),
+          infoCount:ko.observable(2),
+          cycleInfos:  ko.observableArray(),
+          hideCycleInfos:  ko.observableArray(),
+      };
+
       var s = Snap("#svg");
       gSnap = s; 
 
@@ -15,9 +25,8 @@ $(function(){
           var startRadius = info.startR;
           var lenRadius   = info.endR - info.startR;
           var nowRad,nowRadius;
-          
+          //外側
           var polyLines=[];
-          var polyLines2=[];
           for(var smpIdx=0;smpIdx <= info.samplingOneCycle; ++smpIdx)
           {
             var t = smpIdx / info.samplingOneCycle;
@@ -33,12 +42,23 @@ $(function(){
             polyLines.push(x+cx);
             polyLines.push(y+cy);
           }
-          s.polyline({
-              points:polyLines,
-              fill:"none",
-              stroke:"red",
-              strokeWidth:1,
-          });
+          //内側
+          var polyLines2=[];
+          for(var smpIdx=0;smpIdx <= info.samplingOneCycle; ++smpIdx)
+          {
+            var x = polyLines[smpIdx*2];
+            var y = polyLines[smpIdx*2+1];
+            var vx = x - cx;
+            var vy = y - cy;
+            var vLen = Math.sqrt(vx*vx+vy*vy);
+            if(vLen!=0){
+                var nx = vx/vLen;
+                var ny = vy/vLen;
+                var newLen = vLen - info.innerLen;
+                polyLines2.push(nx * newLen + cx);
+                polyLines2.push(ny * newLen + cy);
+            }
+          }
           for(var smpIdx=1;smpIdx <= info.samplingOneCycle-1; ++smpIdx)
           {
             var x0 = polyLines[(smpIdx-1)*2];
@@ -51,11 +71,12 @@ $(function(){
             var dy = y2-y0;
             var dLen = Math.sqrt(dx*dx+dy*dy);
             if(dLen!=0){
-                polyLines2.push(x1+(-dy/dLen)*info.innerLen);
-                polyLines2.push(y1+(dx/dLen)*info.innerLen);
+                //polyLines2.push(x1+(-dy/dLen)*info.innerLen);
+                //polyLines2.push(y1+( dx/dLen)*info.innerLen);
             }
-            //接線テスト
-            
+
+
+            // 接線計算(テスト中)
             var makeVec2 = function(x,y){return {x:x,y:y};}
             var norm = function(v){
                 var len = Math.sqrt(v.x*v.x+v.y*v.y);
@@ -86,29 +107,109 @@ $(function(){
     		maxDeg = Math.max(deg, maxDeg); 
           }
           s.polyline({
+              points:polyLines,
+              fill:"none",
+              stroke:"red",
+              strokeWidth:1,
+          });
+          s.polyline({
               points:polyLines2,
               fill:"none",
               stroke:"red",
               strokeWidth:1,
           });
         }
+        info.aturyokukakuMin = minDeg;
+        info.aturyokukakuMax = maxDeg;
         console.log("max:"+maxDeg+"min:"+minDeg);
       };
-      //drawMoveLine({cycle:4,startR:45,endR:25,innerLen:4,samplingOneCycle:40});
-      //drawMoveLine({cycle:4,startR:30,endR:15,innerLen:4,samplingOneCycle:40});
       var dpi72 = 72 / 25.4; //1.0を72dpiで1mmに変換する係数です
-      var mainCircle = s.circle(cx,cy, 40*dpi72);
-      mainCircle.attr({
-          fill: "none",
-          stroke: "#00F",
-          strokeWidth: 1
+      var updateFunc = function(){
+            s.clear();
+            var circleRadius = myViewModel.circleRadius() * dpi72;
+            var cycle        = myViewModel.cycle();
+            var innerLen     = myViewModel.innerLen()*dpi72;
+            var samplingOneCycle = myViewModel.samplingOneCycle();
+            // 外円
+            var mainCircle = s.circle(cx,cy, circleRadius);
+            mainCircle.attr({
+                fill: "none",
+                stroke: "#00F",
+                strokeWidth: 1
+            });
+            // 六角シャフト穴
+            var rp = s.rpolygon(6,cx,cy,1.5*dpi72).attr({fill:"red"});
+            rp.attr({
+                fill: "none",
+                stroke: "#00F",
+                strokeWidth: 1
+            });
+            //s.prependTo(container);
+
+            // カム
+            $.each(myViewModel.cycleInfos(),function(k,cycleInfo){
+                var info={
+                    cycle:cycle, 
+                    startR:cycleInfo.startR() * dpi72, 
+                    endR:  cycleInfo.endR() * dpi72, 
+                    innerLen:innerLen, 
+                    samplingOneCycle:samplingOneCycle
+                };
+                drawMoveLine(
+                  info
+                );
+                cycleInfo.aturyokukakuMin( info.aturyokukakuMin );
+                cycleInfo.aturyokukakuMax( info.aturyokukakuMax );
+            });
+            var svgTxt = $("#svgContent").html();
+            svgTxt = svgTxt.replace( /<svg /g , '<svg xmlns="http://www.w3.org/2000/svg" ' ) ;
+            svgTxt = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>' + svgTxt;
+            $("#svgText").text(svgTxt);
+            console.log(svgTxt);
+      };
+      ko.bindingHandlers.updateDraw = {
+          init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+              //updateFunc();
+              element =element;
+          },
+          update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+              updateFunc();
+          }
+      };
+      myViewModel.hideCycleInfos([
+          {startR:ko.observable(38), 
+           endR:  ko.observable(20),
+           aturyokukakuMin:ko.observable(0),
+           aturyokukakuMax:ko.observable(0),
+          },
+          {startR:ko.observable(20), 
+           endR:  ko.observable(12),
+           aturyokukakuMin:ko.observable(0),
+           aturyokukakuMax:ko.observable(0),
+          },
+      ]);
+      for(var idx=0;idx<100;idx++)
+      {
+          myViewModel.hideCycleInfos.push(
+                {startR:ko.observable(10), 
+                 endR:  ko.observable(5),
+                 aturyokukakuMin:ko.observable(0),
+                 aturyokukakuMax:ko.observable(0),
+                }
+          );
+      }
+      var updateInfos = function(){
+            myViewModel.cycleInfos.removeAll();
+            for(var idx=0;idx<myViewModel.infoCount();idx++)
+            {
+                myViewModel.cycleInfos.push(myViewModel.hideCycleInfos()[idx]);
+            }
+      };
+      myViewModel.infoCount.subscribe(function(){
+            updateInfos();            
       });
-      drawMoveLine({cycle:3, startR:38*dpi72, endR:20*dpi72, innerLen:4*dpi72, samplingOneCycle:40});      
-      drawMoveLine({cycle:3, startR:20*dpi72, endR:12*dpi72, innerLen:4*dpi72, samplingOneCycle:40});
+      updateInfos();
+      updateFunc();
+      ko.applyBindings(myViewModel);
 
-      //drawMoveLine({cycle:2, startR:38*dpi72, endR:20*dpi72, innerLen:4*dpi72, samplingOneCycle:40});
-      //drawMoveLine({cycle:2, startR:20*dpi72, endR:10*dpi72, innerLen:4*dpi72, samplingOneCycle:40});
-
-      $("#svgText").text($("#svgContent").html());
-      console.log($("#svgContent").html());
 });
