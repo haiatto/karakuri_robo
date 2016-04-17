@@ -416,7 +416,7 @@ if(1)
 		for(var crIdx = peekInfo.cycleRanges.length-1; crIdx >= tryNextCaribCycleIdx_ ; crIdx-- )
 		{
 			var timeRangeBase = peekInfo.cycleRanges[crIdx].endIdx - peekInfo.cycleRanges[crIdx].startIdx;
-			var TimeCorrectRange = timeRangeBase * 0.1;//誤差の許容範囲(+/-の誤差)
+			var TimeCorrectRange = timeRangeBase * 0.3;//0.1;//誤差の許容範囲(+/-の誤差)
 
 			serialCount = 0;
 			for(var crIdx2 = crIdx-1; crIdx2>=0  ; crIdx2-- )
@@ -804,10 +804,10 @@ function CamHeadContol(){
 		if(!bNowReq_ && lastInner!=oldInner)
 		{
 			//test
-			if(!oldInner)
+			if(oldInner)
 			{
 				bNowReq_        = true;
-				reqRestDelayDeg = 5;
+				reqRestDelayDeg = 0;
 				reqRestOnDeg    = 10;
 				reqExitTimer_   = 50;
 			}

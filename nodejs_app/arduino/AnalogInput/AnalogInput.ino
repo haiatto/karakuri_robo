@@ -1,110 +1,262 @@
 /*
-  Analog Input
- Demonstrates analog input by reading an analog sensor on analog pin 0 and
- turning on and off a light emitting diode(LED)  connected to digital pin 13. 
- The amount of time the LED will be on and off depends on
- the value obtained by analogRead(). 
- 
- The circuit:
- * Potentiometer attached to analog input 0
- * center pin of the potentiometer to the analog pin
- * one side pin (either one) to ground
- * the other side pin to +5V
- * LED anode (long leg) attached to digital output 13
- * LED cathode (short leg) attached to ground
- 
- * Note: because most Arduinos have a built-in LED attached 
- to pin 13 on the board, the LED is optional.
- 
- 
- Created by David Cuartielles
- modified 30 Aug 2011
- By Tom Igoe
- 
- This example code is in the public domain.
- 
- http://arduino.cc/en/Tutorial/AnalogInput
- 
+ * karakuri input
  */
+int OutputDigPin0 = 4;
 
-int sensorPin0 = A2;    // select the input pin for the potentiometer
-int sensorPin1 = A5;    // select the input pin for the potentiometer
-int sensorValue0 = 0;  // variable to store the value coming from the sensor
-int sensorValue1 = 0;  // variable to store the value coming from the sensor
+int sensorPinRot0 = A2;
+int sensorPinRot1 = A4;
+int sensorPinHead0  = A5;
+
+int sensorValueRot0 = 0;  // variable to store the value coming from the sensor
+int sensorValueRot1 = 0;  // variable to store the value coming from the sensor
+int sensorValueHead0 = 0;  // variable to store the value coming from the sensor
+
 char json[64];
 int cnt0=0;
 int cnt1=0;
 
+const int CycleNum    = 120;
+const int OneCycleDeg = 360/120;
+const int ThresholdOn  = 600;//700;
+const int ThresholdOff = 400;//400;
+int rotCnt_ = 0;
+int rotSw_  = 0;
+int lastDeg_ = 0;
+
+const int HeadThresholdOn  = 900;
+const int HeadThresholdOff = 300;
+
+struct HeadWork{
+  bool bCalcOk = false;
+  int  lastDegOn = -1;
+  int  lastDegOff = -1;
+  int  lastEdgeSide  =0;
+
+  int  now = 0;
+  int  tgt = 120;
+  
+  bool bNowCmd = false;
+  int  startEdge = 0;
+  int  moveDeg  = 0;
+  int  startTime = 0;
+};
+
+HeadWork headWk0;
+
+int testMoveTime = 0;
+
 void setup() {
   // declare the ledPin as an OUTPUT:
   //pinMode(ledPin, OUTPUT);
-  Serial.begin(9600);
+  //Serial.begin(9600);
+  //Serial.begin(115200);
+  Serial.begin(250000);
   analogReference(DEFAULT);
+/*
+      pinMode(12, OUTPUT); // 回転方向 (HIGH/LOW)
+      pinMode(9, OUTPUT); // ブレーキ (HIGH/LOW)
+      pinMode(3, OUTPUT); // PWMによるスピード制御 (0-255)
+    
+      pinMode(13, OUTPUT); // 回転方向 (HIGH/LOW)
+      pinMode(11, OUTPUT); // ブレーキ (HIGH/LOW)
+      pinMode(8, OUTPUT); // PWMによるスピード制御 (0-255)
+*/
+  pinMode(OutputDigPin0, OUTPUT); // PWMによるスピード制御 (0-255)
+  pinMode(7, OUTPUT); // PWMによるスピード制御 (0-255)
 
-  pinMode(12, OUTPUT); // 回転方向 (HIGH/LOW)
-  pinMode(9, OUTPUT); // ブレーキ (HIGH/LOW)
-  pinMode(3, OUTPUT); // PWMによるスピード制御 (0-255)
+  // ADC高速化(精度低下)
+  ADCSRA = ADCSRA & 0xf8;
+  ADCSRA = ADCSRA | 0x04;
 
-  pinMode(13, OUTPUT); // 回転方向 (HIGH/LOW)
-  pinMode(11, OUTPUT); // ブレーキ (HIGH/LOW)
-  pinMode(8, OUTPUT); // PWMによるスピード制御 (0-255)
+  testMoveTime = millis();
 }
 
 void loop() {
+
+  int time0 = micros();
+  int time1 = 0;
+
+  int moveTime = millis() - testMoveTime;
+#if 0
+  if(moveTime> 1000*4)
+  {
+    testMoveTime = millis();
+    if(headWk0.tgt != 200){
+      headWk0.tgt = 200;
+    }else{
+      headWk0.tgt = 80;
+    }
+  }
+#endif
+  if(moveTime> 100)
+  {
+    testMoveTime = millis();
+    headWk0.tgt += 3;
+    if(headWk0.tgt>200){
+      headWk0.tgt = 80;
+    }
+  }
   
+  // ■目標値入力
   while(Serial.available())
   { 
     char c = Serial.read();
-    if(c=='1')
+    if(c=='t')
     {
-      c = Serial.read();
-      digitalWrite(12, HIGH);
-      digitalWrite(9, LOW);
-      if(c=='h'){
-        cnt0=100;
-        analogWrite(3, 255);
-      }
-      if(c=='l'){
-        analogWrite(3, 0);
-      }        
-    }
-    if(c=='2')
-    {
-      c = Serial.read();
-      digitalWrite(13, HIGH);
-      digitalWrite(11, LOW);
-      if(c=='h'){
-        cnt1=100;
-        analogWrite(8, 255);
-      }
-      if(c=='l'){
-        analogWrite(8, 0);
-      }        
+      headWk0.tgt = 0;
+      headWk0.tgt += (Serial.read()-'0')*100;
+      headWk0.tgt += (Serial.read()-'0')*10;
+      headWk0.tgt += (Serial.read()-'0')*1;
     }
   }
-  if(cnt0>0){
-    cnt0--;
-    if(cnt0==0){
-      analogWrite(3,0);
-    }
-  }
-  if(cnt1>0){
-    cnt1--;
-    if(cnt1==0){
-      analogWrite(8,0);
-    }
-  }
+  // ■センサー入力です
+//  sensorValueRot0 = analogRead(sensorPinRot0);    
+  sensorValueRot1 = analogRead(sensorPinRot1);    
   
-//  analogRead(sensorPin0);    
-  analogRead(sensorPin0);    
-  sensorValue0 = analogRead(sensorPin0);    
+  // ■回転角計測です(割り込み処理候補)
+  if(rotSw_)
+  {
+    if(sensorValueRot1<ThresholdOff){
+      rotSw_ = 0;
+    }
+  }else{
+    if(sensorValueRot1>ThresholdOn){
+      rotSw_ = 1;
+      rotCnt_ = (rotCnt_+1) % CycleNum;
+    }
+  }
+  // ■回転角と量の計算です
+  int moveDeg = 0;
+  int nowDeg  = 0;
+  bool bOutput=false;
+  {
+    nowDeg = rotCnt_ * OneCycleDeg;
+    if(lastDeg_ != nowDeg)
+    {
+      moveDeg = nowDeg - lastDeg_;
+      while(moveDeg< 0 ){moveDeg += 360;}
+      while( moveDeg > 360 ){ moveDeg -= 360;}
+      bOutput=true;
+    }
+    lastDeg_ = nowDeg;
+  }
 
-//  analogRead(sensorPin1);    
-  analogRead(sensorPin1);    
-  sensorValue1 = analogRead(sensorPin1);    
-  
-  sprintf(json, "{\"val0\":%d, \"val1\":%d}", sensorValue0, sensorValue1);
-  Serial.println(json);   
-  
-  delay(10);
+  // ■ヘッダ位置推定
+  int nowEdge = 0;
+  if(bOutput)
+  {
+    // ADCが遅いので必要に応じて読むことに…数増やすなら何か考える方がよさそう？
+    sensorValueHead0 = analogRead(sensorPinHead0);
+
+    if(sensorValueHead0 > HeadThresholdOn){
+      if(headWk0.lastEdgeSide <= 0){
+        nowEdge = 1;
+      }
+    }
+    else if(sensorValueHead0 < HeadThresholdOff){
+      if(headWk0.lastEdgeSide >= 0){
+        nowEdge = -1;
+      }
+    }
+    if(nowEdge!=0)
+    {
+
+      if(headWk0.lastEdgeSide!=0)
+      {
+        if(nowEdge > 0)
+        {
+          headWk0.lastDegOn  = nowDeg;
+        }
+        else{
+          headWk0.lastDegOff = nowDeg;
+        }
+      }
+      headWk0.lastEdgeSide = nowEdge;
+      
+      if(headWk0.lastDegOn>=0 && headWk0.lastDegOff>=0)
+      {
+        if(headWk0.lastDegOff >= headWk0.lastDegOn)
+        {
+          headWk0.now = headWk0.lastDegOff - headWk0.lastDegOn;
+        }else{
+          headWk0.now = (headWk0.lastDegOff+360) - headWk0.lastDegOn;
+        }
+        headWk0.bCalcOk = true;
+      }
+    }
+  }
+
+  // ■ヘッダ移動の発行
+  if(!headWk0.bNowCmd && headWk0.bCalcOk)
+  {
+    int mov = headWk0.tgt - headWk0.now; 
+    if(abs(mov)>5)
+    {
+      if(mov>0){
+        headWk0.bNowCmd = true;
+        headWk0.startEdge = -1;
+        headWk0.moveDeg  = mov/2;//20;//60;//mov;
+        headWk0.startTime = micros();
+      }
+      else if(mov<0){
+        headWk0.bNowCmd = true;
+        headWk0.startEdge = +1;
+        headWk0.moveDeg  = -mov/2;//20;//60;//-mov;
+        headWk0.startTime = millis();
+      }
+    }
+  }
+  //■ヘッダ駆動
+  if(headWk0.bNowCmd)
+  {
+    if(headWk0.startEdge!=0)
+    {
+      if(headWk0.startEdge == nowEdge)
+      {
+        digitalWrite(OutputDigPin0, HIGH);
+        headWk0.startEdge=0;
+      }
+    }
+    else{
+      headWk0.moveDeg -= moveDeg;
+    }
+    bool bTimeOut = false;
+    {
+      int timeOut = millis() - headWk0.startTime;
+      if(timeOut < 0 || timeOut > 5 * 1000)
+      {
+        bTimeOut=true;
+      }
+    }
+    if(headWk0.moveDeg<=0 || bTimeOut){
+      digitalWrite(OutputDigPin0, LOW);
+      headWk0.bNowCmd=false;
+    }
+  }
+
+  if(bOutput)
+  {
+    sprintf(json, "%d,%d,%d,%d,%d", 
+      nowDeg, 
+      sensorValueHead0, 
+      (headWk0.lastEdgeSide>0?1:0) * (HeadThresholdOn-HeadThresholdOff) + HeadThresholdOff,
+      headWk0.now,
+      headWk0.tgt
+      );
+    Serial.println(json);
+  }
+#if 0
+  time1 = micros();
+  sprintf(json,"%d",time1-time0); 
+  Serial.println(json);
+#endif
+#if 0
+  sprintf(json,"%d",sensorValueRot1,time1); 
+  Serial.println(json);
+#endif
+
+  //sprintf(json, "{\"val0\":%d, \"val1\":%d, \"head0\":%d}", sensorValue0, sensorValue1, sensorValueHead0);
+  //sprintf(json, "%d,%d,%d,%d", sensorValue0, sensorValue1, sensorValueHead0, rotCnt);
+  //Serial.println(json);
+  //delay(10);
 }
