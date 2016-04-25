@@ -15,13 +15,15 @@
 </head>
 <body>
    <div id="svgContent">
-      <svg id="svg" height="70%" width="100%"></svg>
+      <svg id="svg" height="500px" width="100%"></svg>
    </div>
    <p>半径(mm): <input type="number" data-bind="value:circleRadius,updateDraw:circleRadius" /></p>
    <p>サイクル数: <input type="number" data-bind="value:cycle,updateDraw:cycle" /></p>
    <p>サンプリング数(1サイクル当たり): <input type="number" data-bind="value:samplingOneCycle,updateDraw:samplingOneCycle" /></p>
    <p>溝の幅(内側へmm): <input type="number" data-bind="value:innerLen,updateDraw:innerLen" /></p>
    <p>溝の数: <input type="number" data-bind="value:infoCount, updateDraw:infoCount" /></p>
+   <p>描画タイプ: <input type="number" data-bind="value:drawType, updateDraw:drawType" /></p>
+   <p>描画タイプ1 角度: <input type="number" data-bind="value:drawType1Degree, updateDraw:drawType1Degree" /></p>
    <div data-bind="foreach:cycleInfos">
       <div class="infoBox">
         最大半径(mm): <input type="number" data-bind="value:startR, updateDraw:startR" />
