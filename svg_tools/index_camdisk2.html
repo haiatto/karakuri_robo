@@ -1,0 +1,37 @@
+<html debug="true">
+<head>
+  <title>SVGTools</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link type="text/css" rel="stylesheet" href="css/styles.css" />
+  <script type='text/javascript' src='libs/jquery-2.1.3.js'></script>
+  <script type='text/javascript' src='libs/snap.svg.js'></script> 
+  <script type='text/javascript' src='libs/snap.snip.js'></script>  
+  <script type='text/javascript' src='libs/knockout-3.2.0.debug.js'></script>
+  <script type='text/javascript' src='js/main_camdisk2.js'></script>
+  <script
+<script>
+</script>
+</head>
+<body>
+   <div id="svgContent">
+      <svg id="svg" height="70%" width="100%"></svg>
+   </div>
+   <p>半径(mm): <input type="number" data-bind="value:circleRadius,updateDraw:circleRadius" /></p>
+   <p>分割サイクル数: <input type="number" data-bind="value:divCycle,updateDraw:divCycle" /></p>
+   <p>分割溝数: <input type="number" data-bind="value:divMizo,updateDraw:divMizo" /></p>
+   <p>溝マージン: <input type="number" data-bind="value:mizoMargin,updateDraw:mizoMargin" /></p>
+   <p>サンプリング数(1サイクル当たり): <input type="number" data-bind="value:samplingOneCycle,updateDraw:samplingOneCycle" /></p>
+   <p>溝の幅(内側へmm): <input type="number" data-bind="value:innerLen,updateDraw:innerLen" /></p>
+
+   <p>最大半径(mm): <input type="number" data-bind="value:startR, updateDraw:startR" /></p>
+   <p>最小半径(mm): <input type="number" data-bind="value:endR, updateDraw:endR" /></p>
+   <div class="infoBox">
+      圧力角最小:<div data-bind="text:aturyokukakuMin, updateDraw:aturyokukakuMin"></div>
+      圧力角最大:<div data-bind="text:aturyokukakuMax, updateDraw:aturyokukakuMax"></div>
+   </div>
+   <br>
+   <textarea type="text" class="svgTextBox" id="svgText">
+   </textarea>
+</body>
+</html>

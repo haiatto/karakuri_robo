@@ -1,0 +1,27 @@
+<html debug="true">
+<head>
+  <title>SVGToolsRotEnc</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link type="text/css" rel="stylesheet" href="css/styles.css" />
+  <script type='text/javascript' src='libs/jquery-2.1.3.js'></script>
+  <script type='text/javascript' src='libs/snap.svg.js'></script> 
+  <script type='text/javascript' src='libs/snap.snip.js'></script>  
+  <script type='text/javascript' src='libs/knockout-3.2.0.debug.js'></script>
+  <script type='text/javascript' src='js/main_rotenc.js'></script>
+  <script
+<script>
+</script>
+</head>
+<body>
+   <div id="svgContent">
+      <svg id="svg" height="70%" width="100%"></svg>
+   </div>
+   <p>半径(mm): <input class="inputbox" type="number" data-bind="value:circleRadius,updateDraw:circleRadius" /></p>
+   <p>歯数: <input class="inputbox type="number" data-bind="value:cycle,updateDraw:cycle" /></p>
+   <p>歯長(mm): <input class="inputbox type="number" data-bind="value:cycleLen,updateDraw:cycleLen" /></p>
+   <br>
+   <textarea type="text" class="svgTextBox" id="svgText">
+   </textarea>
+</body>
+</html>
