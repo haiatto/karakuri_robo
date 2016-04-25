@@ -8,6 +8,8 @@ $(function(){
           infoCount:ko.observable(2),
           cycleInfos:  ko.observableArray(),
           hideCycleInfos:  ko.observableArray(),
+          drawType: ko.observable(0),
+          drawType1Degree: ko.observable(30),
       };
 
       var s = Snap("#svg");
@@ -20,28 +22,64 @@ $(function(){
         var minDeg=99999, maxDeg=0;
         for(var cycIdx=0; cycIdx < info.cycle; cycIdx++)
         {
-          var startRad    = (cycIdx / info.cycle) * Math.PI*2;
-          var lenRad      = (1 / info.cycle)      * Math.PI*2;
-          var startRadius = info.startR;
-          var lenRadius   = info.endR - info.startR;
-          var nowRad,nowRadius;
           //外側
           var polyLines=[];
-          for(var smpIdx=0;smpIdx <= info.samplingOneCycle; ++smpIdx)
+          
+          var type0 = function()
           {
-            var t = smpIdx / info.samplingOneCycle;
-            if(t<0.5){
-                nowRad   = startRad    + t * lenRad;
-                nowRadius= startRadius + t*2 * lenRadius;   
-            }else{
-                nowRad   = startRad    + t * lenRad;
-                nowRadius= startRadius + lenRadius - (t-0.5)*2 * lenRadius;   
-            }
-            var x = nowRadius*Math.cos(nowRad) - Math.sin(nowRad);
-            var y = nowRadius*Math.sin(nowRad) + Math.cos(nowRad);
-            polyLines.push(x+cx);
-            polyLines.push(y+cy);
+              var startRad    = (cycIdx / info.cycle) * Math.PI*2;
+              var lenRad      = (1 / info.cycle)      * Math.PI*2;
+              var startRadius = info.startR;
+              var lenRadius   = info.endR - info.startR;
+              var nowRad,nowRadius;
+              
+              for(var smpIdx=0;smpIdx <= info.samplingOneCycle; ++smpIdx)
+              {
+                var t = smpIdx / info.samplingOneCycle;
+                if(t<0.5){
+                    nowRad   = startRad    + t * lenRad;
+                    nowRadius= startRadius + t*2 * lenRadius;   
+                }else{
+                    nowRad   = startRad    + t * lenRad;
+                    nowRadius= startRadius + lenRadius - (t-0.5)*2 * lenRadius;   
+                }
+                var x = nowRadius*Math.cos(nowRad) - Math.sin(nowRad);
+                var y = nowRadius*Math.sin(nowRad) + Math.cos(nowRad);
+                polyLines.push(x+cx);
+                polyLines.push(y+cy);
+              }
           }
+          var type1 = function()
+          {
+              var startRad    = (cycIdx / info.cycle) * Math.PI*2;
+              var lenRad      = info.type1Degree      /180 * Math.PI;
+              var startRadius = info.startR;
+              var lenRadius   = info.endR - info.startR;
+              var nowRad,nowRadius;
+              
+              for(var smpIdx=0;smpIdx <= info.samplingOneCycle; ++smpIdx)
+              {
+                var t = smpIdx / info.samplingOneCycle;
+                nowRad   = startRad    + t * lenRad;
+                nowRadius= startRadius + t * lenRadius;   
+                var x = nowRadius*Math.cos(nowRad) - Math.sin(nowRad);
+                var y = nowRadius*Math.sin(nowRad) + Math.cos(nowRad);
+                polyLines.push(x+cx);
+                polyLines.push(y+cy);
+              }
+          }
+          if(info.type==0){
+              type0();
+          }else{
+              type1();
+          }          
+          s.polyline({
+              points:polyLines,
+              fill:"none",
+              stroke:"red",
+              strokeWidth:1,
+          });
+           
           //内側
           var polyLines2=[];
           for(var smpIdx=0;smpIdx <= info.samplingOneCycle; ++smpIdx)
@@ -107,17 +145,27 @@ $(function(){
     		maxDeg = Math.max(deg, maxDeg); 
           }
           s.polyline({
-              points:polyLines,
-              fill:"none",
-              stroke:"red",
-              strokeWidth:1,
-          });
-          s.polyline({
               points:polyLines2,
               fill:"none",
               stroke:"red",
               strokeWidth:1,
           });
+          if(info.type==1)
+          {
+              s.polyline({
+                  points:[polyLines[0],polyLines[1],polyLines2[0],polyLines2[1]],
+                  fill:"none",
+                  stroke:"red",
+                  strokeWidth:1,
+              });
+              s.polyline({
+                  points:[polyLines[polyLines.length-2],polyLines[polyLines.length-1],
+                          polyLines2[polyLines2.length-2],polyLines2[polyLines2.length-1]],
+                  fill:"none",
+                  stroke:"red",
+                  strokeWidth:1,
+              });
+          }
         }
         info.aturyokukakuMin = minDeg;
         info.aturyokukakuMax = maxDeg;
@@ -130,6 +178,8 @@ $(function(){
             var cycle        = myViewModel.cycle();
             var innerLen     = myViewModel.innerLen()*dpi72;
             var samplingOneCycle = myViewModel.samplingOneCycle();
+            var drawType     = myViewModel.drawType();
+            var drawType1Degree = myViewModel.drawType1Degree()
             // 外円
             var mainCircle = s.circle(cx,cy, circleRadius);
             mainCircle.attr({
@@ -153,7 +203,10 @@ $(function(){
                     startR:cycleInfo.startR() * dpi72, 
                     endR:  cycleInfo.endR() * dpi72, 
                     innerLen:innerLen, 
-                    samplingOneCycle:samplingOneCycle
+                    samplingOneCycle:samplingOneCycle,
+                    type:drawType,
+                    type1Degree:drawType1Degree,
+                    
                 };
                 drawMoveLine(
                   info
