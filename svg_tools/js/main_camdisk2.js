@@ -4,11 +4,11 @@ $(function(){
           circleRadius:ko.observable(40),
           divCycle:ko.observable(3),
           divMizo:ko.observable(3),
-          mizoMargin:ko.observable(5),
+          mizoMargin:ko.observable(7),
           samplingOneCycle:ko.observable(40),
           innerLen:ko.observable(4),
           startR:ko.observable(38),
-          endR:ko.observable(10),
+          endR:ko.observable(15),
           aturyokukakuMin:ko.observable(0),
           aturyokukakuMax:ko.observable(0),
       };
@@ -280,6 +280,25 @@ $(function(){
             );
             myViewModel.aturyokukakuMin( info.aturyokukakuMin );
             myViewModel.aturyokukakuMax( info.aturyokukakuMax );
+            
+            // 検出用パタン
+            
+            // 外円
+            cx = cx + circleRadius;
+            var mainCircle = s.circle(cx,cy, circleRadius);
+            mainCircle.attr({
+                fill: "none",
+                stroke: "#00F",
+                strokeWidth: 1
+            });
+            // 六角シャフト穴
+            var rp = s.rpolygon(6,cx,cy,1.5*dpi72).attr({fill:"red"});
+            rp.attr({
+                fill: "none",
+                stroke: "#00F",
+                strokeWidth: 1
+            });
+            */
 
             var svgTxt = $("#svgContent").html();
             svgTxt = svgTxt.replace( /<svg /g , '<svg xmlns="http://www.w3.org/2000/svg" ' ) ;
