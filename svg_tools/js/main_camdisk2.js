@@ -284,13 +284,14 @@ $(function(){
             // 検出用パタン
             
             // 外円
-            cx = cx + circleRadius;
-            var mainCircle = s.circle(cx,cy, circleRadius);
-            mainCircle.attr({
+            cx = cx + 100;
+            var mainCircle2 = s.circle(cx,cy, circleRadius);
+            mainCircle2.attr({
                 fill: "none",
                 stroke: "#00F",
                 strokeWidth: 1
             });
+            /*
             // 六角シャフト穴
             var rp = s.rpolygon(6,cx,cy,1.5*dpi72).attr({fill:"red"});
             rp.attr({
