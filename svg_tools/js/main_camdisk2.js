@@ -13,31 +13,31 @@ $(function(){
           aturyokukakuMax:ko.observable(0),
       };
 
+      // 簡易ベクトル計算
+      var makeVec2 = function(x,y){return {x:x,y:y};}
+      var norm = function(v){
+          var len = Math.sqrt(v.x*v.x+v.y*v.y);
+          return makeVec2(v.x/len,v.y/len);
+      };
+      var lenVec = function(v){
+          return Math.sqrt(v.x*v.x+v.y*v.y);
+      };
+      var add = function(v0,v1){return {x:v0.x+v1.x, y:v0.y+v1.y};};
+      var sub = function(v0,v1){return {x:v0.x-v1.x, y:v0.y-v1.y};};
+      var mulS = function(v0,s){return makeVec2(v0.x*s, v0.y*s);};
+      var dot = function(v0,v1){return v0.x*v1.x + v0.y*v1.y;}
+      var rot = function(v,rad){
+          var s=Math.sin(rad);c=Math.cos(rad);
+          return makeVec2(c*v.x + -s*v.y, s*v.x + c*v.y);
+      };
+
       var s = Snap("#svg");
       gSnap = s; 
 
-      var cx=200;
-      var cy=200;
+      var cx=150;
+      var cy=150;
       var drawMoveLine = function(info)
       {
-        // 簡易ベクトル計算
-        var makeVec2 = function(x,y){return {x:x,y:y};}
-        var norm = function(v){
-            var len = Math.sqrt(v.x*v.x+v.y*v.y);
-            return makeVec2(v.x/len,v.y/len);
-        };
-        var lenVec = function(v){
-            return Math.sqrt(v.x*v.x+v.y*v.y);
-        };
-        var add = function(v0,v1){return {x:v0.x+v1.x, y:v0.y+v1.y};};
-        var sub = function(v0,v1){return {x:v0.x-v1.x, y:v0.y-v1.y};};
-        var mulS = function(v0,s){return makeVec2(v0.x*s, v0.y*s);};
-        var dot = function(v0,v1){return v0.x*v1.x + v0.y*v1.y;}
-        var rot = function(v,rad){
-            var s=Math.sin(rad);c=Math.cos(rad);
-            return makeVec2(c*v.x + -s*v.y, s*v.x + c*v.y);
-        };
-
         // 溝のラインたち
         var mizoLinesTbl = [];
         //旧仕様版
@@ -284,22 +284,65 @@ $(function(){
             // 検出用パタン
             
             // 外円
-            cx = cx + 100;
-            var mainCircle2 = s.circle(cx,cy, circleRadius);
+            var cx2 = cx + circleRadius*2.1;
+            var cy2 = cy;
+            var mainCircle2 = s.circle(cx2,cy2, circleRadius);
             mainCircle2.attr({
                 fill: "none",
                 stroke: "#00F",
                 strokeWidth: 1
             });
-            /*
             // 六角シャフト穴
-            var rp = s.rpolygon(6,cx,cy,1.5*dpi72).attr({fill:"red"});
+            var rp = s.rpolygon(6,cx2,cy2,1.5*dpi72).attr({fill:"red"});
             rp.attr({
                 fill: "none",
                 stroke: "#00F",
                 strokeWidth: 1
             });
-            */
+            var drawPtn = function(idx,divRad){
+               var samplingCount = 40;
+               var radMargin   = Math.PI * 2 / divRad * 0.0;
+               var startRad    = Math.PI * 2 / divRad * idx + radMargin;
+               var diffRad     = Math.PI * 2 / divRad - radMargin;
+               var centerMargin= circleRadius*0.1;
+               var startRadius = circleRadius;
+               var diffRadius  = -(circleRadius - centerMargin);
+
+               var polyLines2 = [];
+               var nowRad     = startRad    ;
+               var nowRadius  = startRadius + diffRadius;   
+               var x = nowRadius*Math.cos(nowRad);
+               var y = nowRadius*Math.sin(nowRad);
+               polyLines2.push(x+cx2);
+               polyLines2.push(y+cy2);
+               
+               for(var smpIdx=0;smpIdx <= samplingCount; ++smpIdx)
+               {      
+                  var t = smpIdx / samplingCount;
+                  var nowRad     = startRad    + t * diffRad;
+                  var nowRadius  = startRadius + t * diffRadius;
+                  var x = nowRadius*Math.cos(nowRad);
+                  var y = nowRadius*Math.sin(nowRad);
+                  polyLines2.push(x+cx2);
+                  polyLines2.push(y+cy2);
+               }
+               s.polyline({
+                   points:polyLines2,
+                   fill:"black",
+                   stroke:"black",
+                   strokeWidth:1,
+               });
+            };
+            // こっちが100%の性能出せるはず
+            //for(var idx=0; idx < divCycle*4-1;idx++)
+            //{
+            //    drawPtn(idx, divCycle*4);
+            //}
+            // こっちは頻度低いけど現実的(ロータリーエンコーダの精度次第…)
+            for(var idx=0; idx < divCycle;idx++)
+            {
+                drawPtn(idx, divCycle);
+            }
 
             var svgTxt = $("#svgContent").html();
             svgTxt = svgTxt.replace( /<svg /g , '<svg xmlns="http://www.w3.org/2000/svg" ' ) ;
