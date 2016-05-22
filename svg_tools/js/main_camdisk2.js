@@ -9,6 +9,7 @@ $(function(){
           innerLen:ko.observable(4),
           startR:ko.observable(38),
           endR:ko.observable(15),
+          patternCenterMarginRatio:ko.observable(0.1),
           aturyokukakuMin:ko.observable(0),
           aturyokukakuMax:ko.observable(0),
       };
@@ -248,6 +249,7 @@ $(function(){
             var samplingOneCycle = myViewModel.samplingOneCycle();
             var startR       = myViewModel.startR() * dpi72; 
             var endR         = myViewModel.endR()   * dpi72; 
+            var patternCenterMarginRatio = myViewModel.patternCenterMarginRatio();
 
             // 外円
             var mainCircle = s.circle(cx,cy, circleRadius);
@@ -304,7 +306,7 @@ $(function(){
                var radMargin   = Math.PI * 2 / divRad * 0.0;
                var startRad    = Math.PI * 2 / divRad * idx + radMargin;
                var diffRad     = Math.PI * 2 / divRad - radMargin;
-               var centerMargin= circleRadius*0.1;
+               var centerMargin= circleRadius*patternCenterMarginRatio;
                var startRadius = circleRadius;
                var diffRadius  = -(circleRadius - centerMargin);
 
